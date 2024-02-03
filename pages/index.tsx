@@ -1,42 +1,41 @@
-import { NextPage } from "next";
-import { useEffect, useState } from "react";
- 
-const IndexPage: NextPage = () => {
-    const [imageUrl, setImageUrl] = useState("");
-    const [loading, setLoading] = useState(true);
-    const handleClick = () => {
-        if (loading) {
-            return;
-        }
+import { GetServerSideProps, NextPage } from "next";
+import { useState } from "react";
 
-        setLoading(true);
-        fetchImage().then((image) => {
-            setImageUrl(image.url);
-            setLoading(false);
-        });
-    }
+type Props = { initialImageUrl: string };
 
-    useEffect(() => {
-        fetchImage().then((image) => {
-          setImageUrl(image.url); 
-          setLoading(false);
-        });
-     }, []);
+const IndexPage: NextPage<Props> = ({ initialImageUrl }) => {
+  const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    const newImage = await fetchImage();
+    setImageUrl(newImage.url);
+    setLoading(false);
+  };
   return (
     <div>
-        <button onClick={handleClick}>他のにゃんこも見る</button>
-        <div>{loading || <img src={imageUrl} />}</div>
+      <button onClick={handleClick}>他のにゃんこも見る</button>
+      <div>{loading || <img src={imageUrl} />}</div>
     </div>
   );
-
 };
 export default IndexPage;
 
-type Image = { url: string; };
-  
-const fetchImage = async (): Promise<Image> => {
-    const res = await fetch("https://api.thecatapi.com/v1/images/search");
-    const images = await res.json();
-    console.log(images);
-    return images[0];
+export const getServerSideProps: GetServerSideProps<Props> = async () => {
+  const image = await fetchImage();
+
+  return {
+    props: {
+      initialImageUrl: image.url,
+    },
   };
+};
+
+type Image = { url: string };
+
+const fetchImage = async (): Promise<Image> => {
+  const res = await fetch("https://api.thecatapi.com/v1/images/search");
+  const images = await res.json();
+  console.log(images);
+  return images[0];
+};
